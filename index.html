@@ -7,10 +7,9 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
     
-    <!-- React & Babel Standalone CDNs -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- React CDNs (without crossorigin to support direct file:// opening) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
     <style>
       :root {
@@ -140,8 +139,9 @@
   <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script>
       const { useState } = React;
+      const e = React.createElement;
 
       function App() {
         const [board, setBoard] = useState(Array(9).fill(null));
@@ -180,36 +180,32 @@
           setXIsNext(true);
         };
 
-        return (
-          <div className="container">
-            <h1>Tic-Tac-Toe</h1>
-            
-            <div className="status">
-              {winner ? `Winner: ${winner}` : isDraw ? "It's a draw!" : `Next Player: ${xIsNext ? 'X' : 'O'}`}
-            </div>
+        const statusText = winner 
+          ? `Winner: ${winner}` 
+          : isDraw 
+            ? "It's a draw!" 
+            : `Next Player: ${xIsNext ? 'X' : 'O'}`;
 
-            <div className="board">
-              {board.map((val, idx) => (
-                <button
-                  key={idx}
-                  className={`cell ${val ? `filled ${val.toLowerCase()}` : ''} ${winLine.includes(idx) ? 'winning' : ''}`}
-                  onClick={() => handleClick(idx)}
-                  aria-label={`Square ${idx + 1}`}
-                >
-                  {val}
-                </button>
-              ))}
-            </div>
-
-            <button className="reset-btn" onClick={reset}>
-              Restart Game
-            </button>
-          </div>
+        return e('div', { className: 'container' },
+          e('h1', null, 'Tic-Tac-Toe'),
+          e('div', { className: 'status' }, statusText),
+          e('div', { className: 'board' },
+            board.map((val, idx) => {
+              const isWinning = winLine.includes(idx);
+              return e('button', {
+                key: idx,
+                className: `cell ${val ? `filled ${val.toLowerCase()}` : ''} ${isWinning ? 'winning' : ''}`,
+                onClick: () => handleClick(idx),
+                'aria-label': `Square ${idx + 1}`
+              }, val);
+            })
+          ),
+          e('button', { className: 'reset-btn', onClick: reset }, 'Restart Game')
         );
       }
 
       const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<App />);
+      root.render(e(App));
     </script>
   </body>
 </html>
