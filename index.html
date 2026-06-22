@@ -1,16 +1,215 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tic-Tac-Toe: Quantum Edition</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <title>Tic-Tac-Toe</title>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
+    
+    <!-- React & Babel Standalone CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      :root {
+        --bg: #0f172a;
+        --text: #f8fafc;
+        --cell-bg: #1e293b;
+        --cell-hover: #334155;
+        --accent-x: #38bdf8;
+        --accent-o: #f43f5e;
+        --border: rgba(255, 255, 255, 0.05);
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Outfit', sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 2.5rem;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 2.25rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        background: linear-gradient(135deg, #fff 50%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .status {
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: #94a3b8;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, 90px);
+        grid-template-rows: repeat(3, 90px);
+        gap: 10px;
+      }
+
+      .cell {
+        background: var(--cell-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 2.25rem;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        outline: none;
+        color: var(--text);
+      }
+
+      .cell:hover:not(.filled) {
+        background: var(--cell-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
+
+      .cell.filled {
+        cursor: default;
+      }
+
+      .cell.x {
+        color: var(--accent-x);
+        text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+      }
+
+      .cell.o {
+        color: var(--accent-o);
+        text-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+      }
+
+      .cell.winning {
+        background: #10b981;
+        color: #fff !important;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        border-color: #10b981;
+        text-shadow: none;
+      }
+
+      .reset-btn {
+        font-family: inherit;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.7rem 1.8rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        outline: none;
+      }
+
+      .reset-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+      }
+
+      .reset-btn:active {
+        transform: translateY(1px);
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <script type="text/babel">
+      const { useState } = React;
+
+      function App() {
+        const [board, setBoard] = useState(Array(9).fill(null));
+        const [xIsNext, setXIsNext] = useState(true);
+
+        const calculateWinner = (squares) => {
+          const lines = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+          ];
+          for (let [a, b, c] of lines) {
+            if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+              return { winner: squares[a], line: [a, b, c] };
+            }
+          }
+          return null;
+        };
+
+        const winInfo = calculateWinner(board);
+        const winner = winInfo?.winner;
+        const winLine = winInfo?.line || [];
+        const isDraw = !winner && board.every(Boolean);
+
+        const handleClick = (i) => {
+          if (board[i] || winner || isDraw) return;
+          
+          const nextBoard = board.slice();
+          nextBoard[i] = xIsNext ? 'X' : 'O';
+          setBoard(nextBoard);
+          setXIsNext(!xIsNext);
+        };
+
+        const reset = () => {
+          setBoard(Array(9).fill(null));
+          setXIsNext(true);
+        };
+
+        return (
+          <div className="container">
+            <h1>Tic-Tac-Toe</h1>
+            
+            <div className="status">
+              {winner ? `Winner: ${winner}` : isDraw ? "It's a draw!" : `Next Player: ${xIsNext ? 'X' : 'O'}`}
+            </div>
+
+            <div className="board">
+              {board.map((val, idx) => (
+                <button
+                  key={idx}
+                  className={`cell ${val ? `filled ${val.toLowerCase()}` : ''} ${winLine.includes(idx) ? 'winning' : ''}`}
+                  onClick={() => handleClick(idx)}
+                  aria-label={`Square ${idx + 1}`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+
+            <button className="reset-btn" onClick={reset}>
+              Restart Game
+            </button>
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
   </body>
 </html>
