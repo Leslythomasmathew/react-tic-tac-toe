@@ -7,10 +7,6 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
     
-    <!-- React CDNs (without crossorigin to support direct file:// opening) -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
     <style>
       :root {
         --bg: #0f172a;
@@ -137,75 +133,89 @@
     </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div class="container">
+      <h1>Tic-Tac-Toe</h1>
+      <div class="status" id="status">Next Player: X</div>
+      <div class="board" id="board"></div>
+      <button class="reset-btn" id="reset">Restart Game</button>
+    </div>
 
     <script>
-      const { useState } = React;
-      const e = React.createElement;
+      let board = Array(9).fill(null);
+      let xIsNext = true;
+      let winner = null;
+      let winLine = [];
 
-      function App() {
-        const [board, setBoard] = useState(Array(9).fill(null));
-        const [xIsNext, setXIsNext] = useState(true);
+      const statusEl = document.getElementById('status');
+      const boardEl = document.getElementById('board');
+      const resetEl = document.getElementById('reset');
 
-        const calculateWinner = (squares) => {
-          const lines = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-          ];
-          for (let [a, b, c] of lines) {
-            if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-              return { winner: squares[a], line: [a, b, c] };
-            }
+      const lines = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+      ];
+
+      function checkWinner() {
+        for (let [a, b, c] of lines) {
+          if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return { winner: board[a], line: [a, b, c] };
           }
-          return null;
-        };
-
-        const winInfo = calculateWinner(board);
-        const winner = winInfo?.winner;
-        const winLine = winInfo?.line || [];
-        const isDraw = !winner && board.every(Boolean);
-
-        const handleClick = (i) => {
-          if (board[i] || winner || isDraw) return;
-          
-          const nextBoard = board.slice();
-          nextBoard[i] = xIsNext ? 'X' : 'O';
-          setBoard(nextBoard);
-          setXIsNext(!xIsNext);
-        };
-
-        const reset = () => {
-          setBoard(Array(9).fill(null));
-          setXIsNext(true);
-        };
-
-        const statusText = winner 
-          ? `Winner: ${winner}` 
-          : isDraw 
-            ? "It's a draw!" 
-            : `Next Player: ${xIsNext ? 'X' : 'O'}`;
-
-        return e('div', { className: 'container' },
-          e('h1', null, 'Tic-Tac-Toe'),
-          e('div', { className: 'status' }, statusText),
-          e('div', { className: 'board' },
-            board.map((val, idx) => {
-              const isWinning = winLine.includes(idx);
-              return e('button', {
-                key: idx,
-                className: `cell ${val ? `filled ${val.toLowerCase()}` : ''} ${isWinning ? 'winning' : ''}`,
-                onClick: () => handleClick(idx),
-                'aria-label': `Square ${idx + 1}`
-              }, val);
-            })
-          ),
-          e('button', { className: 'reset-btn', onClick: reset }, 'Restart Game')
-        );
+        }
+        return null;
       }
 
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(e(App));
+      function updateUI() {
+        const isDraw = !winner && board.every(Boolean);
+        if (winner) {
+          statusEl.textContent = `Winner: ${winner}`;
+        } else if (isDraw) {
+          statusEl.textContent = "It's a draw!";
+        } else {
+          statusEl.textContent = `Next Player: ${xIsNext ? 'X' : 'O'}`;
+        }
+
+        boardEl.innerHTML = '';
+        board.forEach((val, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'cell';
+          if (val) {
+            btn.classList.add('filled', val.toLowerCase());
+            btn.textContent = val;
+          }
+          if (winLine.includes(idx)) {
+            btn.classList.add('winning');
+          }
+          btn.addEventListener('click', () => handleClick(idx));
+          boardEl.appendChild(btn);
+        });
+      }
+
+      function handleClick(idx) {
+        if (board[idx] || winner || !board.includes(null) && !winner) return;
+
+        board[idx] = xIsNext ? 'X' : 'O';
+        xIsNext = !xIsNext;
+
+        const result = checkWinner();
+        if (result) {
+          winner = result.winner;
+          winLine = result.line;
+        }
+
+        updateUI();
+      }
+
+      function resetGame() {
+        board = Array(9).fill(null);
+        xIsNext = true;
+        winner = null;
+        winLine = [];
+        updateUI();
+      }
+
+      resetEl.addEventListener('click', resetGame);
+      updateUI();
     </script>
   </body>
 </html>
